@@ -74,3 +74,16 @@ class ShiftSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shift
         fields = "__all__"
+
+
+
+#################################################################
+######################## GPS TRACKING #########################
+################################################################
+
+from .models import UserLocation
+
+class UserLocationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserLocation
+        fields = ["id", "latitude", "longitude", "site"]

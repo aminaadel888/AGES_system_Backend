@@ -4,6 +4,7 @@ from users.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
+######################## ATTENDANCE SYSTEM #########################
 class Shift(models.Model):
     SHIFT_TYPES = [
         ("morning", "Morning"),
@@ -75,3 +76,40 @@ class AttendanceRecord(models.Model):
 
     def __str__(self):
         return f"{self.worker_name} - {self.status}"
+    
+
+
+
+#################################################################
+######################## GPS TRACKING #########################
+################################################################
+
+
+class UserLocation(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="locations")
+
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        related_name="locations",
+        null=True,
+        blank=True
+    )
+
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - ({self.latitude}, {self.longitude})"
+    
+
+#save last location for dashboard
+class UserLastLocation(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.user} - last location"

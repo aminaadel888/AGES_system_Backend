@@ -39,3 +39,31 @@ class BulkAttendanceCreateView(APIView):
             })
 
         return Response(serializer.errors, status=400)
+    
+
+#################################################################
+######################## GPS TRACKING #########################
+################################################################
+
+from .models import UserLocation, UserLastLocation
+from .serializers import UserLocationSerializer
+
+class UserLocationCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = UserLocationSerializer(data=request.data)
+
+        if serializer.is_valid():
+            location = serializer.save(user=request.user)
+            #update last location    
+            UserLastLocation.objects.update_or_create(
+                user=request.user,
+                defaults={
+                    "latitude": location.latitude,
+                    "longitude": location.longitude,
+                }
+            )
+            return Response({"message": "Location saved"}, status=201)
+
+        return Response(serializer.errors, status=400)
