@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    # swagger for api schema
+    'drf_spectacular',
     'users.apps.UsersConfig',
     'sites.apps.SitesConfig',
     'operations.apps.OperationsConfig',
@@ -51,8 +53,13 @@ from datetime import timedelta
 REST_FRAMEWORK={
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        
     ),
+    #swagger
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    
 }
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -139,3 +146,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "AGES API",
+    "DESCRIPTION": "Operations Management System APIs",
+    "VERSION": "1.0.0",
+}
