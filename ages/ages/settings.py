@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'rest_framework',
     # swagger for api schema
     'drf_spectacular',
+    #ngrok 
+    "corsheaders",
+
     'users.apps.UsersConfig',
     'sites.apps.SitesConfig',
     'operations.apps.OperationsConfig',
@@ -76,8 +79,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
 
+    "corsheaders.middleware.CorsMiddleware",
+]
+CORS_ALLOW_ALL_ORIGINS = True
 ROOT_URLCONF = 'ages.urls'
 
 TEMPLATES = [
@@ -152,3 +157,6 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Operations Management System APIs",
     "VERSION": "1.0.0",
 }
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"

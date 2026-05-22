@@ -77,8 +77,63 @@ class AttendanceRecord(models.Model):
     def __str__(self):
         return f"{self.worker_name} - {self.status}"
     
+########## workers photos #############
+
+class WorkerPhotoReport(models.Model):
+
+    supervisor = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="worker_photo_reports"
+    )
+
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        related_name="worker_photo_reports"
+    )
+
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6
+    )
+
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6
+    )
+
+    notes = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return f"{self.site.name} - {self.created_at}"
 
 
+class WorkerPhoto(models.Model):
+
+    report = models.ForeignKey(
+        WorkerPhotoReport,
+        on_delete=models.CASCADE,
+        related_name="images"
+    )
+
+    image = models.ImageField(
+        upload_to="worker_photos/%Y/%m/%d/"
+    )
+
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return f"Photo {self.id}"
 
 #################################################################
 ######################## GPS TRACKING #########################

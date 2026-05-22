@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import BulkAttendanceCreateView,SiteListAPIView,ShiftBySiteAPIView,UserLocationCreateView
+from .views import BulkAttendanceCreateView,SiteListAPIView,ShiftBySiteAPIView,UserLocationCreateView, WorkerPhotoReportCreateView
+
+
+
 
 urlpatterns = [
     #### Attendance #####
@@ -8,4 +11,10 @@ urlpatterns = [
     path("sites/<int:site_id>/shifts/", ShiftBySiteAPIView.as_view(), name="site-shifts"),
     ##### GPS tracking#########
     path("location/", UserLocationCreateView.as_view()),
+    ####### worker photos#######
+    path(
+        "worker-photos/",
+        WorkerPhotoReportCreateView.as_view(),
+        name="worker-photos"
+    ),
 ]

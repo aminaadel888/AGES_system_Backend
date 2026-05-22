@@ -11,15 +11,26 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import IsAuthenticated
 from .permissions import IsAdmin
 
+from drf_spectacular.utils import extend_schema
+
+
 # Create your views here.
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
 
 
-
+# @extend_schema(
+#     request=LoginSerializer,
+#     responses={200: LoginSerializer}
+# )
 class LoginView(APIView):
+    
+    @extend_schema(
+        request=LoginSerializer,
+    )
 
+   
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import AttendanceRecord, Attendance ,Shift
+from .models import AttendanceRecord, Attendance ,Shift,WorkerPhotoReport,WorkerPhoto
 from sites.models import Site
 from django.utils import timezone
 
@@ -75,7 +75,26 @@ class ShiftSerializer(serializers.ModelSerializer):
         model = Shift
         fields = "__all__"
 
+########### worker photo ########
 
+class WorkerPhotoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = WorkerPhoto
+        fields = ["id", "image"]
+
+class WorkerPhotoReportSerializer(serializers.ModelSerializer):
+
+    images = WorkerPhotoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = WorkerPhotoReport
+        fields = "__all__"
+        read_only_fields = ["supervisor",
+                            "site",
+                            "latitude", 
+                            "longitude"
+                            ]
 
 #################################################################
 ######################## GPS TRACKING #########################
