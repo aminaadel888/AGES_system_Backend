@@ -2,8 +2,6 @@ from django.urls import path
 from .views import BulkAttendanceCreateView,SiteListAPIView,ShiftBySiteAPIView,UserLocationCreateView, WorkerPhotoReportCreateView
 
 
-
-
 urlpatterns = [
     #### Attendance #####
     path("attendance/bulk/", BulkAttendanceCreateView.as_view(), name="attendance-bulk"),
@@ -12,9 +10,6 @@ urlpatterns = [
     ##### GPS tracking#########
     path("location/", UserLocationCreateView.as_view()),
     ####### worker photos#######
-    path(
-        "worker-photos/",
-        WorkerPhotoReportCreateView.as_view(),
-        name="worker-photos"
-    ),
+    path("worker-photos/", WorkerPhotoReportCreateView.as_view(), name="worker-photos" ),
+    
 ]

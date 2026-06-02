@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'sites.apps.SitesConfig',
     'operations.apps.OperationsConfig',
+    'reports.apps.ReportsConfig',
 ]
 
 from datetime import timedelta
@@ -151,6 +152,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "AGES API",

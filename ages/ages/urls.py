@@ -20,6 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 
+
 # swagger
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -32,6 +33,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
     path('api/operations/', include('operations.urls')),
+    path('api/reports/', include('reports.urls')),
+
+    ####### weekly report ########
+    path("api/reports/",include("reports.urls")),
 
     ###### swagger ###########
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

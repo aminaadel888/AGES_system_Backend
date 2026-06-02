@@ -45,13 +45,13 @@ class LoginSerializer(serializers.Serializer):
         try:
             user = User.objects.get(phone=phone)
         except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid credentials")
+            raise serializers.ValidationError("خطأ في بيانات تسجيل الدخول")
 
         if not user.check_password(password):
-            raise serializers.ValidationError("Invalid credentials")
+            raise serializers.ValidationError("خطأ في بيانات تسجيل الدخول")
 
         if not user.is_active:
-            raise serializers.ValidationError("User account is disabled.")
+            raise serializers.ValidationError("حساب المستخدم قيد التفعيل")
 
         data["user"] = user
         return data
