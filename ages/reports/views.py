@@ -1,14 +1,18 @@
 from django.shortcuts import render
 from rest_framework import generics
-from .models import WeeklyCleaningReport ,WeeklyCleaningReportFile
+from .models import WeeklyCleaningReport ,WeeklyCleaningReportFile,IncidentReport
 from drf_spectacular.utils import extend_schema
-from .serializers import WeeklyCleaningReportCreateSerializer , WeeklyCleaningReportFileSerializer,WeeklyCleaningReportSwaggerSerializer
+from .serializers import (WeeklyCleaningReportCreateSerializer , WeeklyCleaningReportFileSerializer,
+                          WeeklyCleaningReportSwaggerSerializer ,IncidentReportSerializer)
 from rest_framework import status
 from rest_framework.response import Response
 
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
-
+from rest_framework.parsers import MultiPartParser, FormParser
+###########################################################################
+########################## weekly reports ########################################
+############################################################################
 
 
 @extend_schema(
@@ -88,4 +92,19 @@ class WeeklyCleaningReportCreateView(generics.CreateAPIView):
                 file_type="after"
             )
 
-        
+    
+##############################################
+
+
+#############################################################################
+########################## Incident reports  #########################
+#############################################################################
+
+class IncidentReportCreateView(generics.CreateAPIView):
+
+    queryset = IncidentReport.objects.all()
+    serializer_class = IncidentReportSerializer
+
+    permission_classes = [IsAuthenticated]
+
+    parser_classes = [MultiPartParser, FormParser]
