@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import WeeklyCleaningReport,WeeklyCleaningReportFile ,IncidentReport, IncidentImage
+from .models import (WeeklyCleaningReport,WeeklyCleaningReportFile ,IncidentReport, 
+                     IncidentImage,ShiftHandoverReport, ShiftHandoverImage)
 from django.utils import timezone
 
 from operations.models import Site
@@ -225,3 +226,80 @@ class IncidentReportSwaggerSerializer(serializers.Serializer):
         child=serializers.ImageField(),
         required=False
     )
+
+    ##########################################################################################
+    
+
+
+ ###########################################################################
+########################## Shift Handover reports ########################################
+############################################################################
+
+class ShiftHandoverImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShiftHandoverImage
+        fields = ["id", "image"]
+
+
+class ShiftHandoverReportSerializer(serializers.ModelSerializer):
+
+    images = ShiftHandoverImageSerializer(
+        many=True,
+        read_only=True
+    )
+
+    class Meta:
+        model = ShiftHandoverReport
+        fields = "__all__"
+
+        read_only_fields = [
+            "current_supervisor",
+            "is_received",
+            "received_at",
+            "created_at",
+        ]
+
+    def validate(self, attrs):
+
+        request = self.context.get("request")
+        next_supervisor = attrs.get("next_supervisor")
+
+        if not next_supervisor:
+            raise serializers.ValidationError({
+                "next_supervisor": "This field is required."
+            })
+
+        if next_supervisor.role not in ["supervisor", "manager"]:
+            raise serializers.ValidationError({
+                "next_supervisor":
+                "Next supervisor must be a supervisor or manager."
+            })
+
+        if request and next_supervisor == request.user:
+            raise serializers.ValidationError({
+                "next_supervisor":
+                "You cannot assign yourself as the next supervisor."
+            })
+
+        return attrs
+########## for swagger #####################
+class ShiftHandoverCreateSerializer(serializers.ModelSerializer):
+    images = serializers.ListField(
+        child=serializers.ImageField(),
+        write_only=True,
+        required=False
+    )
+
+    class Meta:
+        model = ShiftHandoverReport
+        fields = [
+            "shift",
+            "next_supervisor",
+            "site_status",
+            "completed_work",
+            "remaining_work",
+            "workers_count",
+            "ongoing_issues",
+            "handover_method",
+            "images",
+        ]

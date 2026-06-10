@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 from sites.models import Site
+from users.models import User
 
 ###########################################################################
 ########################## weekly reports ########################################
@@ -152,4 +153,98 @@ class IncidentImage(models.Model):
     def __str__(self):
         return f"Image {self.id}"
     
+##########################################################################################
     
+
+
+ ###########################################################################
+########################## Shift Handover reports ##################################
+############################################################################
+
+class ShiftHandoverReport(models.Model):
+
+    SITE_STATUS_CHOICES = [
+        ("clean", "نظيف"),
+        ("follow_up", "يحتاج متابعه"),
+        ("incomplete", "غير مكتمل"),
+    ]
+
+    HANDOVER_METHODS = [
+        ("direct", "تسليم مباشر"),
+        ("without_receiving", "بدون تسليم مباشر"),
+    ]
+
+    shift = models.ForeignKey(
+        "operations.Shift",
+        on_delete=models.CASCADE,
+        related_name="handover_reports"
+    )
+
+    current_supervisor = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="created_handovers"
+    )
+
+    next_supervisor = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="received_handovers"
+    )
+
+    site_status = models.CharField(
+        max_length=20,
+        choices=SITE_STATUS_CHOICES
+    )
+
+    completed_work = models.TextField()
+
+    remaining_work = models.TextField()
+
+    workers_count = models.PositiveIntegerField()
+
+    ongoing_issues = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    handover_method = models.CharField(
+        max_length=30,
+        choices=HANDOVER_METHODS
+    )
+
+    is_received = models.BooleanField(
+        default=False
+    )
+
+    received_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Handover #{self.id} - {self.shift.site.name}"
+
+
+class ShiftHandoverImage(models.Model):
+
+    report = models.ForeignKey(
+        ShiftHandoverReport,
+        on_delete=models.CASCADE,
+        related_name="images"
+    )
+
+    image = models.ImageField(
+        upload_to="shift_handover/%Y/%m/%d/"
+    )
+
+    def __str__(self):
+        return f"Image {self.id} for Report {self.report.id}"
+
