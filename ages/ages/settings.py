@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'sites.apps.SitesConfig',
     'operations.apps.OperationsConfig',
     'reports.apps.ReportsConfig',
+    'notes.apps.NotesConfig',
 ]
 
 from datetime import timedelta
