@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'operations.apps.OperationsConfig',
     'reports.apps.ReportsConfig',
     'notes.apps.NotesConfig',
+    'inventory.apps.InventoryConfig',
 ]
 
 from datetime import timedelta
