@@ -74,7 +74,16 @@ class ShiftSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shift
         fields = "__all__"
+######### dropdowns ####
+class SiteDropdownSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Site
+        fields = ["id", "name"]
 
+class ShiftDropdownSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shift
+        fields = ["id", "name"]
 ########### worker photo ########
 
 class WorkerPhotoSerializer(serializers.ModelSerializer):

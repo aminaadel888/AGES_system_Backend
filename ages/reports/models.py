@@ -174,13 +174,19 @@ class ShiftHandoverReport(models.Model):
         ("without_receiving", "بدون تسليم مباشر"),
     ]
 
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.PROTECT,
+        related_name="handover_reports"
+    )
+
     shift = models.ForeignKey(
         "operations.Shift",
         on_delete=models.CASCADE,
         related_name="handover_reports"
     )
 
-    current_supervisor = models.ForeignKey(
+    current_supervisor = models.ForeignKey(  
         User,
         on_delete=models.CASCADE,
         related_name="created_handovers"
@@ -230,7 +236,7 @@ class ShiftHandoverReport(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Handover #{self.id} - {self.shift.site.name}"
+        return f"Handover #{self.id} - {self.site.name if self.site else 'No Site'}"
 
 
 class ShiftHandoverImage(models.Model):

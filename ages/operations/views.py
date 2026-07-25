@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from sites.models import Site
 from .models import Shift
 from .serializers import BulkAttendanceSerializer
-from .serializers import SiteSerializer, ShiftSerializer,WorkerPhoto,WorkerPhotoReportSerializer
+from .serializers import SiteSerializer, ShiftSerializer,WorkerPhoto,WorkerPhotoReportSerializer, SiteDropdownSerializer,ShiftDropdownSerializer
 from drf_spectacular.utils import extend_schema
 
 
@@ -15,13 +15,15 @@ class SiteListAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         sites = Site.objects.all()
-        return Response(SiteSerializer(sites, many=True).data)
+        return Response(SiteDropdownSerializer(sites, many=True).data)
+    
 
 class ShiftBySiteAPIView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request, site_id):
         shifts = Shift.objects.filter(site_id=site_id)
-        return Response(ShiftSerializer(shifts, many=True).data)
+        return Response(ShiftDropdownSerializer(shifts, many=True).data)
     
 
 class BulkAttendanceCreateView(APIView):

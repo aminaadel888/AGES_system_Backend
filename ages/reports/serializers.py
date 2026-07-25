@@ -57,6 +57,27 @@ class WeeklyCleaningReportCreateSerializer(serializers.ModelSerializer):
                 "A report already exists for this site and shift today."
             )
         
+    #### image validation ######    
+        ALLOWED_IMAGE_TYPES = [
+        "image/jpeg",
+        "image/png",
+        "image/jpg",
+        "image/webp",
+        ]
+
+        request = self.context["request"]
+
+        for field_name in ["report_files", "before_images", "after_images"]:
+            files = request.FILES.getlist(field_name)
+
+            for file in files:
+                if file.content_type not in ALLOWED_IMAGE_TYPES:
+                    raise serializers.ValidationError(
+                        {
+                            field_name: "Only image files are allowed."
+                        }
+                    )
+
         return attrs
     
 
@@ -248,9 +269,45 @@ class ShiftHandoverReportSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    site_name = serializers.CharField(
+        source="site.name",
+        read_only=True
+    )
+
+    shift_name = serializers.CharField(
+        source="shift.name",
+        read_only=True
+    )
+
+    current_supervisor_name = serializers.CharField(
+        source="current_supervisor.username",
+        read_only=True
+    )
+
+    next_supervisor_name = serializers.CharField(
+        source="next_supervisor.username",
+        read_only=True
+    )
+
     class Meta:
         model = ShiftHandoverReport
-        fields = "__all__"
+        fields = [
+            "id",
+            "site",
+            "shift",
+            "current_supervisor",
+            "next_supervisor",
+            "site_status",
+            "completed_work",
+            "remaining_work",
+            "workers_count",
+            "ongoing_issues",
+            "handover_method",
+            "is_received",
+            "received_at",
+            "created_at",
+            "images",
+        ]
 
         read_only_fields = [
             "current_supervisor",
@@ -259,29 +316,29 @@ class ShiftHandoverReportSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    def validate(self, attrs):
+    # def validate(self, attrs):
 
-        request = self.context.get("request")
-        next_supervisor = attrs.get("next_supervisor")
+    #     request = self.context.get("request")
+    #     next_supervisor = attrs.get("next_supervisor")
 
-        if not next_supervisor:
-            raise serializers.ValidationError({
-                "next_supervisor": "This field is required."
-            })
+    #     if not next_supervisor:
+    #         raise serializers.ValidationError({
+    #             "next_supervisor": "This field is required."
+    #         })
 
-        if next_supervisor.role not in ["supervisor", "manager"]:
-            raise serializers.ValidationError({
-                "next_supervisor":
-                "Next supervisor must be a supervisor or manager."
-            })
+    #     if next_supervisor.role not in ["supervisor", "manager"]:
+    #         raise serializers.ValidationError({
+    #             "next_supervisor":
+    #             "Next supervisor must be a supervisor or manager."
+    #         })
 
-        if request and next_supervisor == request.user:
-            raise serializers.ValidationError({
-                "next_supervisor":
-                "You cannot assign yourself as the next supervisor."
-            })
+    #     if request and next_supervisor == request.user:
+    #         raise serializers.ValidationError({
+    #             "next_supervisor":
+    #             "You cannot assign yourself as the next supervisor."
+    #         })
 
-        return attrs
+    #     return attrs
 ########## for swagger #####################
 class ShiftHandoverCreateSerializer(serializers.ModelSerializer):
     images = serializers.ListField(
@@ -293,6 +350,7 @@ class ShiftHandoverCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShiftHandoverReport
         fields = [
+            "site",
             "shift",
             "next_supervisor",
             "site_status",
@@ -303,3 +361,27 @@ class ShiftHandoverCreateSerializer(serializers.ModelSerializer):
             "handover_method",
             "images",
         ]
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+
+        site = attrs.get("site")
+        shift = attrs.get("shift")
+        next_supervisor = attrs.get("next_supervisor")
+
+        if shift.site != site:
+            raise serializers.ValidationError({
+                "shift": "Selected shift does not belong to the selected site."
+            })
+
+        if next_supervisor.role not in ["supervisor", "manager"]:
+            raise serializers.ValidationError({
+                "next_supervisor": "Next supervisor must be a supervisor or manager."
+            })
+
+        if request and next_supervisor == request.user:
+            raise serializers.ValidationError({
+                "next_supervisor": "You cannot assign yourself as the next supervisor."
+            })
+
+        return attrs

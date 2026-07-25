@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics, status
 from .models import User
-from .serializers import RegisterSerializer,LoginSerializer
+from .serializers import RegisterSerializer,LoginSerializer,SupervisorDropdownSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 #jwt 
@@ -13,6 +13,21 @@ from .permissions import IsAdmin
 
 from drf_spectacular.utils import extend_schema
 
+
+class SupervisorDropdownAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        supervisors = User.objects.filter(
+            role__in=["supervisor", "manager"]
+        )
+
+        serializer = SupervisorDropdownSerializer(
+            supervisors,
+            many=True
+        )
+
+        return Response(serializer.data)
 
 # Create your views here.
 class RegisterView(generics.CreateAPIView):
