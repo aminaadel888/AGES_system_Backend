@@ -3,6 +3,13 @@ from rest_framework import serializers
 from .models import User
 from django.contrib.auth import authenticate
 
+
+class SupervisorDropdownSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username"]
+
+
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -45,13 +52,13 @@ class LoginSerializer(serializers.Serializer):
         try:
             user = User.objects.get(phone=phone)
         except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid credentials")
+            raise serializers.ValidationError("خطأ في بيانات تسجيل الدخول")
 
         if not user.check_password(password):
-            raise serializers.ValidationError("Invalid credentials")
+            raise serializers.ValidationError("خطأ في بيانات تسجيل الدخول")
 
         if not user.is_active:
-            raise serializers.ValidationError("User account is disabled.")
+            raise serializers.ValidationError("حساب المستخدم قيد التفعيل")
 
         data["user"] = user
         return data
