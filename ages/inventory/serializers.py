@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import *
 from django.db import transaction
+import json
 
 ######################## Inventory Audit serializers #########################
 
@@ -47,6 +48,7 @@ class InventoryAuditSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "site",
+            "shift",
             "created_by",
             "audit_date",
             "notes",
@@ -60,12 +62,10 @@ class InventoryAuditSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    
 class InventoryAuditCreateSerializer(serializers.ModelSerializer):
 
-    items = InventoryAuditItemCreateSerializer(
-        many=True,
-        write_only=True
-    )
+    items = serializers.JSONField(write_only=True)
 
     images = serializers.ListField(
         child=serializers.ImageField(),
@@ -77,6 +77,7 @@ class InventoryAuditCreateSerializer(serializers.ModelSerializer):
         model = InventoryAudit
         fields = [
             "site",
+            "shift",
             "audit_date",
             "notes",
             "items",
@@ -85,9 +86,29 @@ class InventoryAuditCreateSerializer(serializers.ModelSerializer):
 
     def validate_items(self, value):
         if not value:
-            raise serializers.ValidationError("Items cannot be empty.")
-        return value
-    
+            raise serializers.ValidationError(
+                "Items cannot be empty."
+            )
+
+        item_serializer = InventoryAuditItemCreateSerializer(
+            data=value,
+            many=True
+        )
+        item_serializer.is_valid(raise_exception=True)
+
+        return item_serializer.validated_data
+
+    def validate(self, data):
+        site = data.get("site")
+        shift = data.get("shift")
+
+        if shift.site != site:
+            raise serializers.ValidationError(
+                "Selected shift does not belong to selected site."
+            )
+
+        return data
+
     def create(self, validated_data):
 
         items_data = validated_data.pop("items")
@@ -113,11 +134,11 @@ class InventoryAuditCreateSerializer(serializers.ModelSerializer):
                 )
 
         return audit
-
 #################### for swagger ####################################
 class InventoryAuditSwaggerSerializer(serializers.Serializer):
 
     site = serializers.IntegerField()
+    shift = serializers.IntegerField()
     audit_date = serializers.DateField()
     notes = serializers.CharField(required=False)
 
@@ -174,8 +195,8 @@ class InventoryRequestSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "site",
+            "shift",
             "requested_by",
-            "request_date",
             "notes",
             "created_at",
             "items",
@@ -198,7 +219,7 @@ class InventoryRequestCreateSerializer(serializers.ModelSerializer):
         model = InventoryRequest
         fields = [
             "site",
-            "request_date",
+            "shift",
             "notes",
             "items",
         ]
@@ -207,6 +228,17 @@ class InventoryRequestCreateSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Items cannot be empty.")
         return value
+
+    def validate(self, data):
+        site = data.get("site")
+        shift = data.get("shift")
+
+        if shift.site != site:
+            raise serializers.ValidationError(
+                "Selected shift does not belong to selected site."
+            )
+
+        return data
 
     def create(self, validated_data):
 
@@ -231,7 +263,7 @@ class InventoryRequestCreateSerializer(serializers.ModelSerializer):
 class InventoryRequestSwaggerSerializer(serializers.Serializer):
 
     site = serializers.IntegerField()
-    request_date = serializers.DateField()
+    shift = serializers.IntegerField()
     notes = serializers.CharField(required=False)
 
     items = serializers.ListField(
@@ -280,8 +312,8 @@ class InventoryReceiptSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "site",
+            "shift",
             "received_by",
-            "received_date",
             "notes",
             "created_at",
             "items",
@@ -303,7 +335,7 @@ class InventoryReceiptCreateSerializer(serializers.ModelSerializer):
         model = InventoryReceipt
         fields = [
             "site",
-            "received_date",
+            "shift",
             "notes",
             "items",
         ]
@@ -312,7 +344,17 @@ class InventoryReceiptCreateSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Items cannot be empty.")
         return value
-    
+
+    def validate(self, data):
+        site = data.get("site")
+        shift = data.get("shift")
+
+        if shift.site != site:
+            raise serializers.ValidationError(
+                "Selected shift does not belong to selected site.")
+
+        return data
+        
     def create(self, validated_data):
 
         items_data = validated_data.pop("items")
@@ -335,7 +377,7 @@ class InventoryReceiptCreateSerializer(serializers.ModelSerializer):
 class InventoryReceiptSwaggerSerializer(serializers.Serializer):
 
     site = serializers.IntegerField()
-    received_date = serializers.DateField()
+    shift = serializers.IntegerField()
     notes = serializers.CharField(required=False)
 
     items = serializers.ListField(

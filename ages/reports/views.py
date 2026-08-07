@@ -141,18 +141,8 @@ class ShiftHandoverReportCreateView(generics.CreateAPIView):
     @transaction.atomic
     def perform_create(self, serializer):
 
-            report = serializer.save(
-                current_supervisor=self.request.user
-            )
-
-            images = self.request.FILES.getlist("images")
-
-            if images:
-                ShiftHandoverImage.objects.bulk_create([
-                    ShiftHandoverImage(report=report, image=image)
-                    for image in images
-                ])
-                
+        serializer.save(current_supervisor=self.request.user)
+    
 
 @extend_schema(
     summary="Confirm Shift Handover Receipt",

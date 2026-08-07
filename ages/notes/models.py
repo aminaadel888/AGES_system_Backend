@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 
 from sites.models import Site
+from operations.models import Shift
 
 class Note(models.Model):
 
@@ -18,6 +19,12 @@ class Note(models.Model):
         on_delete=models.CASCADE,
         related_name="notes"
     )
+
+    shift = models.ForeignKey(
+    Shift,
+    on_delete=models.CASCADE,
+    related_name="notes"
+)
 
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

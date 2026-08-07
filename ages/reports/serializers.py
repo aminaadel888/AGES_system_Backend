@@ -42,10 +42,10 @@ class WeeklyCleaningReportCreateSerializer(serializers.ModelSerializer):
     
         today = timezone.localdate()
 
-        if today.weekday() != 5:
-            raise serializers.ValidationError(
-                "Weekly cleaning reports can only be created on Saturday."
-            )
+        # if today.weekday() != 5:
+        #     raise serializers.ValidationError(
+        #         "Weekly cleaning reports can only be created on Saturday."
+        #     )
         
     ##### repeating validation #####
         if WeeklyCleaningReport.objects.filter(
@@ -54,15 +54,24 @@ class WeeklyCleaningReportCreateSerializer(serializers.ModelSerializer):
             report_date=today
         ).exists():
             raise serializers.ValidationError(
-                "A report already exists for this site and shift today."
+                "يوجد بالفعل تقرير لهذا الموقع وهذا الشيفت اليوم."
             )
-        
+
+
     #### image validation ######    
-        ALLOWED_IMAGE_TYPES = [
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-        "image/webp",
+        ALLOWED_FILE_TYPES = [
+         # Images
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "image/webp",
+
+        # PDF
+            "application/pdf",
+
+        # Excel
+            "application/vnd.ms-excel", 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         ]
 
         request = self.context["request"]
@@ -71,13 +80,23 @@ class WeeklyCleaningReportCreateSerializer(serializers.ModelSerializer):
             files = request.FILES.getlist(field_name)
 
             for file in files:
-                if file.content_type not in ALLOWED_IMAGE_TYPES:
+
+                if field_name == "report_files":
+                    allowed_types = ALLOWED_FILE_TYPES
+                else:
+                    allowed_types = [
+                        "image/jpeg",
+                        "image/png",
+                        "image/jpg",
+                        "image/webp",
+                    ]
+
+                if file.content_type not in allowed_types:
                     raise serializers.ValidationError(
                         {
-                            field_name: "Only image files are allowed."
+                            field_name: "Invalid file type."
                         }
                     )
-
         return attrs
     
 
@@ -293,10 +312,19 @@ class ShiftHandoverReportSerializer(serializers.ModelSerializer):
         model = ShiftHandoverReport
         fields = [
             "id",
+
             "site",
+            "site_name",
+
             "shift",
+            "shift_name",
+
             "current_supervisor",
+            "current_supervisor_name",
+
             "next_supervisor",
+            "next_supervisor_name",
+
             "site_status",
             "completed_work",
             "remaining_work",
@@ -308,7 +336,6 @@ class ShiftHandoverReportSerializer(serializers.ModelSerializer):
             "created_at",
             "images",
         ]
-
         read_only_fields = [
             "current_supervisor",
             "is_received",
@@ -361,6 +388,17 @@ class ShiftHandoverCreateSerializer(serializers.ModelSerializer):
             "handover_method",
             "images",
         ]
+    def create(self, validated_data):
+        images = validated_data.pop("images", [])
+        report = ShiftHandoverReport.objects.create(**validated_data)
+
+        for image in images:
+            ShiftHandoverImage.objects.create(
+                report=report,
+                image=image
+            )
+
+        return report
 
     def validate(self, attrs):
         request = self.context.get("request")

@@ -1,6 +1,8 @@
 from django.db import models
 from users.models import User
 from sites.models import Site
+from operations.models import Shift
+
 
 
 ######################## Inventory Audit #########################
@@ -11,6 +13,13 @@ class InventoryAudit(models.Model):
         on_delete=models.CASCADE,
         related_name="inventory_audits"
     )
+
+    shift = models.ForeignKey(
+        Shift,
+        on_delete=models.CASCADE,
+        related_name="inventory_audits"
+    )
+
 
     created_by = models.ForeignKey(
         User,
@@ -77,13 +86,18 @@ class InventoryRequest(models.Model):
         related_name="inventory_requests"
     )
 
+    shift = models.ForeignKey(
+        Shift,
+        on_delete=models.CASCADE,
+        related_name="inventory_requests"
+    )
+
     requested_by = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="inventory_requests"
     )
 
-    request_date = models.DateField()
 
     notes = models.TextField(
         blank=True
@@ -128,6 +142,12 @@ class InventoryReceipt(models.Model):
         on_delete=models.CASCADE,
         related_name="inventory_receipts"
     )
+    shift = models.ForeignKey(
+        Shift,
+        on_delete=models.CASCADE,
+        related_name="inventory_receipts"
+    )
+
 
     received_by = models.ForeignKey(
         User,
@@ -135,7 +155,6 @@ class InventoryReceipt(models.Model):
         related_name="inventory_receipts"
     )
 
-    received_date = models.DateField()
 
     notes = models.TextField(
         blank=True

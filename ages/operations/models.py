@@ -71,6 +71,10 @@ class AttendanceRecord(models.Model):
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
 
+    national_id_image = models.ImageField(
+        upload_to="attendance/id_cards/%Y/%m/%d/"
+    )
+
     class Meta:
         unique_together = ("attendance", "worker_name")
 
