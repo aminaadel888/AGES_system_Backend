@@ -28,7 +28,8 @@ DEBUG = True
 
 import os
 # ALLOWED_HOSTS = []
-ALLOWED_HOSTS = ["ages-production.up.railway.app",]
+ALLOWED_HOSTS = ["*",
+    "ages-production.up.railway.app",]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://ages-production.up.railway.app",
