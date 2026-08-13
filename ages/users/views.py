@@ -1,7 +1,9 @@
 from django.shortcuts import render
-from rest_framework import generics, status
+from rest_framework import generics, status,viewsets
+from rest_framework.decorators import action
+
 from .models import User
-from .serializers import RegisterSerializer,LoginSerializer,SupervisorDropdownSerializer
+from .serializers import *
 from rest_framework.views import APIView
 from rest_framework.response import Response
 #jwt 
@@ -99,3 +101,73 @@ class ManagerView(APIView):
         return Response({
             "message": "Manager or Admin access"
         })
+
+
+    
+#############################################################################
+##################### Admin  ##########################
+########################################################################################
+class AdminUserViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get_queryset(self):
+        return User.objects.all().order_by("id")
+
+    @action(
+        detail=True,
+        methods=["patch"],
+        url_path="change-password"
+    )
+    def change_password(self, request, pk=None):
+        user = self.get_object()
+
+        serializer = AdminChangePasswordSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        user.set_password(
+            serializer.validated_data["password"]
+        )
+
+        user.save()
+
+        return Response(
+            {
+                "message": "Password changed successfully."
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+###### change my own password ###########
+
+class ChangeOwnPasswordView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+
+        serializer = ChangeOwnPasswordSerializer(
+            data=request.data,
+            context={"request": request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+
+        user.set_password(
+            serializer.validated_data["new_password"]
+        )
+
+        user.save()
+
+        return Response(
+            {
+                "message": "Password changed successfully."
+            },
+            status=status.HTTP_200_OK
+        )

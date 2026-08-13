@@ -166,7 +166,7 @@ class IncidentReportSerializer(serializers.ModelSerializer):
 
     def get_nearest_site(self, latitude, longitude):
 
-        sites = Site.objects.all()
+        sites = Site.objects.filter(is_active=True)
 
         nearest_site = None
         min_distance = float("inf")
@@ -210,12 +210,19 @@ class IncidentReportSerializer(serializers.ModelSerializer):
 
         request = self.context["request"]
 
+        site = self.get_nearest_site(
+            validated_data["latitude"],
+            validated_data["longitude"]
+        )
+
+        if site is None:
+            raise serializers.ValidationError({
+                "site":" تعذر تحديد الموقع بناءً على إحداثيات نظام تحديد المواقع العالمي (GPS) المقدمة."
+            })
+
         incident = IncidentReport.objects.create(
             reported_by=request.user,
-            site=self.get_nearest_site(
-                validated_data["latitude"],
-                validated_data["longitude"]
-            ),
+            site=site,
             **validated_data
         )
 

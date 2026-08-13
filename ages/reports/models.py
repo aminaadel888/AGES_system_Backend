@@ -90,9 +90,7 @@ class IncidentReport(models.Model):
 
     site = models.ForeignKey(
         Site,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        on_delete=models.CASCADE,
         related_name="incident_reports"
     )
 

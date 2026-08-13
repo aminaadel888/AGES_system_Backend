@@ -3,6 +3,29 @@ from .models import AttendanceRecord, Attendance ,Shift,WorkerPhotoReport,Worker
 from sites.models import Site
 from django.utils import timezone
 
+############## Admin CRUD shift ##############
+
+class AdminShiftSerializer(serializers.ModelSerializer):
+    site_name = serializers.CharField(
+        source="site.name",
+        read_only=True
+    )
+
+    class Meta:
+        model = Shift
+        fields = [
+            "id",
+            "site",
+            "site_name",
+            "name",
+            "start_time",
+            "end_time",
+        ]
+        read_only_fields = ["id", "site_name"]
+
+    
+################################################################
+
 # class WorkerInputSerializer(serializers.Serializer):
 #     worker_name = serializers.CharField()
 #     status = serializers.ChoiceField(choices=["present", "absent", "leave"])

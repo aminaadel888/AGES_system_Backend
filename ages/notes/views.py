@@ -37,4 +37,6 @@ class NoteListView(generics.ListAPIView):
             "site",
             "shift",
             "created_by"
-        ).all()
+        ).filter(
+            created_by=self.request.user
+        ).order_by("-created_at")
