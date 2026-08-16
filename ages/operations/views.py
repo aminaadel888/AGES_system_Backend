@@ -7,14 +7,14 @@ from rest_framework.permissions import IsAuthenticated
 from sites.models import Site
 from .models import Shift, Attendance ,AttendanceRecord
 from .serializers import BulkAttendanceSerializer
-from .serializers import SiteSerializer, ShiftSerializer,WorkerPhoto,WorkerPhotoReportSerializer, SiteDropdownSerializer,ShiftDropdownSerializer
+from .serializers import WorkerPhotoReportCreateSerializer,WorkerPhotoReportSerializer, SiteDropdownSerializer,ShiftDropdownSerializer
 from drf_spectacular.utils import extend_schema
 import json
 from django.db import transaction
 from rest_framework import status
 from django.utils import timezone
 from rest_framework.parsers import MultiPartParser, FormParser
-
+from rest_framework.exceptions import ValidationError
 
 class SiteListAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -166,93 +166,125 @@ class BulkAttendanceCreateView(APIView):
 #############################################################################
 # ##################### workers Photos ########################
 # ############################################################################
-from django.db import transaction
-from rest_framework.exceptions import ValidationError
-import math
-# --------- helper: distance ----------
-def calculate_distance(lat1, lon1, lat2, lon2):
-    R = 6371  # km
-
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-
-    a = (
-        math.sin(dlat / 2) ** 2
-        + math.cos(math.radians(lat1))
-        * math.cos(math.radians(lat2))
-        * math.sin(dlon / 2) ** 2
-    )
-
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return R * c
-
-
-# --------- helper: nearest site ----------
-def get_nearest_site(lat, lon):
-    sites = Site.objects.filter(is_active=True)
-
-    nearest_site = None
-    min_distance = float("inf")
-
-    for site in sites:
-        if site.latitude is None or site.longitude is None:
-            continue
-
-        distance = calculate_distance(
-            lat, lon,
-            float(site.latitude),
-            float(site.longitude)
-        )
-
-        if distance < min_distance:
-            min_distance = distance
-            nearest_site = site
-
-    return nearest_site
-
-
-# --------- VIEW ----------
 class WorkerPhotoReportCreateView(generics.CreateAPIView):
-    serializer_class = WorkerPhotoReportSerializer
+
+    serializer_class = WorkerPhotoReportCreateSerializer
     permission_classes = [IsAuthenticated]
 
+    parser_classes = [
+        MultiPartParser,
+        FormParser,
+    ]
+
     @transaction.atomic
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
 
-        # 1. supervisor = logged-in user
-        supervisor = self.request.user
-
-        # 2. GPS from frontend
-        try:
-            lat = float(self.request.data.get("latitude"))
-            lon = float(self.request.data.get("longitude"))
-        except (TypeError, ValueError):
-            raise ValidationError("Latitude and Longitude are required and must be numbers")
-
-        # 3. find nearest site
-        site = get_nearest_site(lat, lon)
-
-        if not site:
-            raise ValidationError("No nearby site found")
-
-        # 4. create report
-        report = serializer.save(
-            supervisor=supervisor,
-            site=site,
-            latitude=lat,
-            longitude=lon
+        serializer = self.get_serializer(
+            data=request.data
         )
 
-        # 5. images
-        images = self.request.FILES.getlist("images")
+        serializer.is_valid(
+            raise_exception=True
+        )
 
-        if not images:
-            raise ValidationError("At least one image is required")
+        report = serializer.save()
 
-        WorkerPhoto.objects.bulk_create([
-            WorkerPhoto(report=report, image=img)
-            for img in images
-        ])
+        response_serializer = WorkerPhotoReportSerializer(
+            report,
+            context={"request": request}
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+# from django.db import transaction
+# from rest_framework.exceptions import ValidationError
+# import math
+# # --------- helper: distance ----------
+# def calculate_distance(lat1, lon1, lat2, lon2):
+#     R = 6371  # km
+
+#     dlat = math.radians(lat2 - lat1)
+#     dlon = math.radians(lon2 - lon1)
+
+#     a = (
+#         math.sin(dlat / 2) ** 2
+#         + math.cos(math.radians(lat1))
+#         * math.cos(math.radians(lat2))
+#         * math.sin(dlon / 2) ** 2
+#     )
+
+#     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+#     return R * c
+
+
+# # --------- helper: nearest site ----------
+# def get_nearest_site(lat, lon):
+#     sites = Site.objects.filter(is_active=True)
+
+#     nearest_site = None
+#     min_distance = float("inf")
+
+#     for site in sites:
+#         if site.latitude is None or site.longitude is None:
+#             continue
+
+#         distance = calculate_distance(
+#             lat, lon,
+#             float(site.latitude),
+#             float(site.longitude)
+#         )
+
+#         if distance < min_distance:
+#             min_distance = distance
+#             nearest_site = site
+
+#     return nearest_site
+
+
+# # --------- VIEW ----------
+# class WorkerPhotoReportCreateView(generics.CreateAPIView):
+#     serializer_class = WorkerPhotoReportSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     @transaction.atomic
+#     def perform_create(self, serializer):
+
+#         # 1. supervisor = logged-in user
+#         supervisor = self.request.user
+
+#         # 2. GPS from frontend
+#         try:
+#             lat = float(self.request.data.get("latitude"))
+#             lon = float(self.request.data.get("longitude"))
+#         except (TypeError, ValueError):
+#             raise ValidationError("Latitude and Longitude are required and must be numbers")
+
+#         # 3. find nearest site
+#         site = get_nearest_site(lat, lon)
+
+#         if not site:
+#             raise ValidationError("No nearby site found")
+
+#         # 4. create report
+#         report = serializer.save(
+#             supervisor=supervisor,
+#             site=site,
+#             latitude=lat,
+#             longitude=lon
+#         )
+
+#         # 5. images
+#         images = self.request.FILES.getlist("images")
+
+#         if not images:
+#             raise ValidationError("At least one image is required")
+
+#         WorkerPhoto.objects.bulk_create([
+#             WorkerPhoto(report=report, image=img)
+#             for img in images
+#         ])
 #################################################################
 ######################## GPS TRACKING #########################
 ################################################################
