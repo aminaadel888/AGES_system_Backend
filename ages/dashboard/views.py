@@ -4,11 +4,12 @@ from django.utils import timezone
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from users.permissions import IsAdmin
 from rest_framework import generics
+from django_filters.rest_framework import DjangoFilterBackend
 
 from sites.models import Site
-from operations.models import Attendance , AttendanceRecord
+from operations.models import Attendance , AttendanceRecord,WorkerPhotoReport
 from reports.models import IncidentReport, WeeklyCleaningReport
 
 from .serializers import *
@@ -18,7 +19,7 @@ User = get_user_model()
 
 ######### Overview ############
 class AdminDashboardOverviewView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def get(self, request):
         # Admin only
@@ -89,7 +90,7 @@ class AdminDashboardOverviewView(APIView):
 ############## Attendance ############
 
 class AdminDashboardAttendanceView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def get(self, request):
 
@@ -154,7 +155,7 @@ class AdminDashboardAttendanceView(APIView):
 
 #########  Incidents ##################
 class AdminDashboardIncidentsView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
     serializer_class = DashboardIncidentSerializer
 
     def get_queryset(self):
@@ -187,7 +188,7 @@ class AdminDashboardIncidentsView(generics.ListAPIView):
 
 ############### weekly Reports ####################
 class AdminDashboardWeeklyReportsView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
     serializer_class = DashboardWeeklyReportSerializer
 
     def get_queryset(self):
@@ -234,7 +235,7 @@ class AdminDashboardWeeklyReportsView(generics.ListAPIView):
 ######## Notes ########################################
 
 class AdminDashboardNotesView(generics.ListAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
     serializer_class = DashboardNoteSerializer
 
     def get_queryset(self):
@@ -268,3 +269,23 @@ class AdminDashboardNotesView(generics.ListAPIView):
             queryset = queryset.filter(created_at__date=date)
 
         return queryset.order_by("-created_at")
+
+
+################ worker photos ########################
+class DashboardWorkerPhotoListView(generics.ListAPIView):
+    serializer_class = DashboardWorkerPhotoSerializer
+    permission_classes = [IsAdmin]
+
+    queryset = (
+        WorkerPhotoReport.objects
+        .select_related("site", "supervisor")
+        .prefetch_related("images")
+        .order_by("-created_at")
+    )
+
+    filter_backends = [DjangoFilterBackend]
+
+    filterset_fields = [
+        "site",
+        "supervisor",
+    ]

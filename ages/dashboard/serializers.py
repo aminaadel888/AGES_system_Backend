@@ -3,6 +3,7 @@ from reports.models import (IncidentReport, IncidentImage ,
                             WeeklyCleaningReport,WeeklyCleaningReportFile)
 
 from notes.models import Note
+from operations.models import WorkerPhotoReport
 
 ######### Overview ############
 class AttendanceBreakdownSerializer(serializers.Serializer):
@@ -38,10 +39,6 @@ class AttendanceDashboardSerializer(serializers.Serializer):
 
 
 #########  Incidents ##################
-from rest_framework import serializers
-
-from reports.models import IncidentReport, IncidentImage
-
 
 class DashboardIncidentImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -202,4 +199,36 @@ class DashboardNoteSerializer(serializers.ModelSerializer):
             "note_type",
             "description",
             "created_at",
+        ]
+
+
+########## worker photos ############
+class DashboardWorkerPhotoSerializer(serializers.ModelSerializer):
+    site_name = serializers.CharField(source="site.name", read_only=True)
+    supervisor_name = serializers.CharField(
+        source="supervisor.username",
+        read_only=True
+    )
+    images = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WorkerPhotoReport
+        fields = [
+            "id",
+            "site_name",
+            "supervisor_name",
+            "latitude",
+            "longitude",
+            "notes",
+            "created_at",
+            "images",
+        ]
+
+    def get_images(self, obj):
+        request = self.context.get("request")
+
+        return [
+            request.build_absolute_uri(photo.image.url)
+            if request else photo.image.url
+            for photo in obj.images.all()
         ]
