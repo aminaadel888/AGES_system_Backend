@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'notes.apps.NotesConfig',
     'inventory.apps.InventoryConfig',
     'dashboard.apps.DashboardConfig',
+
 ]
 
 from datetime import timedelta
@@ -80,10 +81,10 @@ REST_FRAMEWORK={
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "AUTH_HEADER_TYPES": ("Bearer",),
-    "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": False,
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
 }
 
 

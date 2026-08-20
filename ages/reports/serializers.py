@@ -6,7 +6,7 @@ from django.utils import timezone
 from operations.models import Site
 from math import radians, sin, cos, sqrt, atan2
 
-
+from users.models import User
 ###########################################################################
 ########################## weekly reports ########################################
 ############################################################################
@@ -350,31 +350,18 @@ class ShiftHandoverReportSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    # def validate(self, attrs):
 
-    #     request = self.context.get("request")
-    #     next_supervisor = attrs.get("next_supervisor")
-
-    #     if not next_supervisor:
-    #         raise serializers.ValidationError({
-    #             "next_supervisor": "This field is required."
-    #         })
-
-    #     if next_supervisor.role not in ["supervisor", "manager"]:
-    #         raise serializers.ValidationError({
-    #             "next_supervisor":
-    #             "Next supervisor must be a supervisor or manager."
-    #         })
-
-    #     if request and next_supervisor == request.user:
-    #         raise serializers.ValidationError({
-    #             "next_supervisor":
-    #             "You cannot assign yourself as the next supervisor."
-    #         })
-
-    #     return attrs
-########## for swagger #####################
 class ShiftHandoverCreateSerializer(serializers.ModelSerializer):
+
+    next_supervisor = serializers.PrimaryKeyRelatedField(
+    queryset=User.objects.filter(
+        role__in=["supervisor", "manager"],
+        is_active=True
+        ),
+        required=False,
+        allow_null=True
+    )
+
     images = serializers.ListField(
         child=serializers.ImageField(),
         write_only=True,
@@ -395,9 +382,29 @@ class ShiftHandoverCreateSerializer(serializers.ModelSerializer):
             "handover_method",
             "images",
         ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        request = self.context.get("request")
+
+        if request and request.user.is_authenticated:
+            self.fields["next_supervisor"].queryset = (
+                User.objects.filter(
+                    role__in=["supervisor", "manager"],
+                    is_active=True
+                ).exclude(
+                    id=request.user.id
+                )
+            )
+
     def create(self, validated_data):
         images = validated_data.pop("images", [])
-        report = ShiftHandoverReport.objects.create(**validated_data)
+
+        report = ShiftHandoverReport.objects.create(
+            next_supervisor=validated_data.pop("next_supervisor", None),
+            **validated_data
+        )
 
         for image in images:
             ShiftHandoverImage.objects.create(
@@ -413,20 +420,39 @@ class ShiftHandoverCreateSerializer(serializers.ModelSerializer):
         site = attrs.get("site")
         shift = attrs.get("shift")
         next_supervisor = attrs.get("next_supervisor")
+        handover_method = attrs.get("handover_method")
 
         if shift.site != site:
             raise serializers.ValidationError({
-                "shift": "Selected shift does not belong to the selected site."
+                "shift": "الوردية المختارة لا تتبع الموقع المختار."
             })
 
-        if next_supervisor.role not in ["supervisor", "manager"]:
-            raise serializers.ValidationError({
-                "next_supervisor": "Next supervisor must be a supervisor or manager."
-            })
+        if handover_method == "direct":
+            if not next_supervisor:
+                raise serializers.ValidationError({
+                    "next_supervisor":
+                    "يجب اختيار المشرف المستلم عند التسليم المباشر."
+                })
 
-        if request and next_supervisor == request.user:
-            raise serializers.ValidationError({
-                "next_supervisor": "You cannot assign yourself as the next supervisor."
-            })
+            if next_supervisor.role not in ["supervisor", "manager"]:
+                raise serializers.ValidationError({
+                    "next_supervisor":
+                    "يجب أن يكون المشرف المستلم مشرفًا أو مديرًا."
+                })
+
+            if request and next_supervisor == request.user:
+                raise serializers.ValidationError({
+                    "next_supervisor":
+                    "لا يمكنك اختيار نفسك كمشرف مستلم."
+                })
+
+        elif handover_method == "without_receiving":
+
+            if next_supervisor:
+                raise serializers.ValidationError({
+                    "next_supervisor":
+                    "لا يجب اختيار مشرف مستلم عند اختيار التسليم بدون استلام مباشر."
+                })
+
 
         return attrs

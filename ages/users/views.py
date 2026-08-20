@@ -21,7 +21,10 @@ class SupervisorDropdownAPIView(APIView):
 
     def get(self, request):
         supervisors = User.objects.filter(
-            role__in=["supervisor", "manager"]
+            role__in=["supervisor", "manager"],
+            is_active=True
+        ).exclude(
+            id=request.user.id
         )
 
         serializer = SupervisorDropdownSerializer(
@@ -30,7 +33,6 @@ class SupervisorDropdownAPIView(APIView):
         )
 
         return Response(serializer.data)
-
 # Create your views here.
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()

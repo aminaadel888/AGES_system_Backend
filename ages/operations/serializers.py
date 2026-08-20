@@ -107,20 +107,119 @@ class WorkerPhotoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WorkerPhoto
-        fields = ["id", "image"]
+        fields = [
+            "id",
+            "image",
+            "image_type",
+            "uploaded_at",
+        ]
+
+        read_only_fields = [
+            "id",
+            "uploaded_at",
+        ]
+
 
 class WorkerPhotoReportSerializer(serializers.ModelSerializer):
 
-    images = WorkerPhotoSerializer(many=True, read_only=True)
+    images = WorkerPhotoSerializer(
+        many=True,
+        read_only=True
+    )
 
     class Meta:
         model = WorkerPhotoReport
-        fields = "__all__"
-        read_only_fields = ["supervisor",
-                            "site",
-                            "latitude", 
-                            "longitude"
-                            ]
+        fields = [
+            "id",
+            "supervisor",
+            "site",
+            "shift",
+            "created_at",
+            "images",
+        ]
+
+        read_only_fields = [
+            "supervisor",
+            "created_at",
+        ]
+
+class WorkerPhotoReportCreateSerializer(serializers.ModelSerializer):
+
+    
+    worker_images = serializers.ListField(
+        child=serializers.ImageField(),
+        required=True,
+        write_only=True
+    )
+
+    report_images = serializers.ListField(
+        child=serializers.ImageField(),
+        required=True,
+        write_only=True
+    )
+
+    class Meta:
+        model = WorkerPhotoReport
+        fields = [
+            "site",
+            "shift",
+            "worker_images",
+            "report_images",
+        ]
+
+    def validate_worker_images(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                "يجب رفع صورة واحدة على الأقل للعمال."
+            )
+
+        return value
+
+    def validate_report_images(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                "يجب رفع صورة واحدة على الأقل للتقرير."
+            )
+
+        return value
+
+    def validate(self, attrs):
+
+        site = attrs.get("site")
+        shift = attrs.get("shift")
+
+        if shift.site != site:
+            raise serializers.ValidationError({
+                "shift":
+                "الوردية المختارة لا تتبع الموقع المختار."
+            })
+
+        return attrs
+    def create(self, validated_data):
+
+        worker_images = validated_data.pop("worker_images", [])
+        report_images = validated_data.pop("report_images", [])
+
+        report = WorkerPhotoReport.objects.create(
+            supervisor=self.context["request"].user,
+            **validated_data
+        )
+
+        for image in worker_images:
+            WorkerPhoto.objects.create(
+                report=report,
+                image=image,
+                image_type="worker"
+            )
+
+        for image in report_images:
+            WorkerPhoto.objects.create(
+                report=report,
+                image=image,
+                image_type="report"
+            )
+
+        return report
 
 #################################################################
 ######################## GPS TRACKING #########################

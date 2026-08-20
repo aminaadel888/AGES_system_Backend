@@ -97,19 +97,10 @@ class WorkerPhotoReport(models.Model):
         related_name="worker_photo_reports"
     )
 
-    latitude = models.DecimalField(
-        max_digits=9,
-        decimal_places=6
-    )
-
-    longitude = models.DecimalField(
-        max_digits=9,
-        decimal_places=6
-    )
-
-    notes = models.TextField(
-        blank=True,
-        null=True
+    shift = models.ForeignKey(
+        "Shift",
+        on_delete=models.CASCADE,
+        related_name="worker_photo_reports"
     )
 
     created_at = models.DateTimeField(
@@ -122,6 +113,11 @@ class WorkerPhotoReport(models.Model):
 
 class WorkerPhoto(models.Model):
 
+    IMAGE_TYPE_CHOICES = [
+        ("worker", "Worker"),
+        ("report", "Report"),
+    ]
+
     report = models.ForeignKey(
         WorkerPhotoReport,
         on_delete=models.CASCADE,
@@ -132,13 +128,17 @@ class WorkerPhoto(models.Model):
         upload_to="worker_photos/%Y/%m/%d/"
     )
 
+    image_type = models.CharField(
+        max_length=20,
+        choices=IMAGE_TYPE_CHOICES
+    )
+
     uploaded_at = models.DateTimeField(
         auto_now_add=True
     )
 
     def __str__(self):
-        return f"Photo {self.id}"
-
+        return f"Photo {self.id} - {self.image_type}"
 #################################################################
 ######################## GPS TRACKING #########################
 ################################################################

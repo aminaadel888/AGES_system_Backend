@@ -140,9 +140,27 @@ class ShiftHandoverReportCreateView(generics.CreateAPIView):
 
     @transaction.atomic
     def perform_create(self, serializer):
+        serializer.save(
+            current_supervisor=self.request.user
+        )
 
-        serializer.save(current_supervisor=self.request.user)
-    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        report = serializer.save(
+            current_supervisor=request.user
+        )
+
+        response_serializer = ShiftHandoverReportSerializer(
+            report,
+            context={"request": request}
+        )
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
 
 @extend_schema(
     summary="Confirm Shift Handover Receipt",

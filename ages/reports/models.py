@@ -193,7 +193,9 @@ class ShiftHandoverReport(models.Model):
     next_supervisor = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="received_handovers"
+        related_name="received_handovers",
+        null=True,
+        blank=True
     )
 
     site_status = models.CharField(

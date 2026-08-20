@@ -111,7 +111,7 @@ class InventoryRequest(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.site} - {self.request_date}"
+        return f"{self.site} - {self.created_at}"
 
 
 class InventoryRequestItem(models.Model):
