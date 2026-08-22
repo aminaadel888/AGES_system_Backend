@@ -1,8 +1,7 @@
 from rest_framework import serializers
-from .models import AttendanceRecord, Attendance ,Shift,WorkerPhotoReport,WorkerPhoto
+from .models import AttendanceRecord, Attendance ,Shift,WorkerPhotoReport,WorkerPhoto,UserLocation
 from sites.models import Site
 from django.utils import timezone
-
 ############## Admin CRUD shift ##############
 
 class AdminShiftSerializer(serializers.ModelSerializer):
@@ -26,60 +25,79 @@ class AdminShiftSerializer(serializers.ModelSerializer):
     
 ################################################################
 
-# class WorkerInputSerializer(serializers.Serializer):
-#     worker_name = serializers.CharField()
-#     status = serializers.ChoiceField(choices=["present", "absent", "leave"])
-#     national_id_image = serializers.ImageField(
-#         required=False,
-#         allow_null=True
-#     )
-
 
 class BulkAttendanceSerializer(serializers.Serializer):
-    #attendance = serializers.PrimaryKeyRelatedField(queryset=Attendance.objects.all())
+
     site = serializers.IntegerField()
     shift = serializers.IntegerField()
-    # workers = WorkerInputSerializer(many=True)
 
     def validate(self, data):
+
         site = data["site"]
         shift = data["shift"]
 
-        if not Shift.objects.filter(id=shift, site_id=site).exists():
-            raise serializers.ValidationError("Shift does not belong to this site")
+        if not Shift.objects.filter(
+            id=shift,
+            site_id=site
+        ).exists():
+
+            raise serializers.ValidationError(
+                "هذا الشيفت غير تابع للموقع"
+            )
 
         return data
 
-    # def create(self, validated_data):
-    #     site = validated_data["site"]
-    #     shift = validated_data["shift"]
-    #     workers = validated_data["workers"]
-    #     #لمنع التكرار
-    #     today = timezone.localdate()
+class WorkerInputSerializer(serializers.Serializer):
 
-    #     if Attendance.objects.filter(
-    #         site_id=site,
-    #         shift_id=shift,
-    #         supervisor=self.context["request"].user,
-    #         date=today
-    #     ).exists():
-    #         raise serializers.ValidationError("Attendance already exists for today")
+    worker_name = serializers.CharField()
 
-    #     attendance = Attendance.objects.create(
-    #         site_id=site,
-    #         shift_id=shift,
-    #         supervisor=self.context["request"].user,
-    #         date=today
-    #     )
-        
-    #     for w in workers:
-    #         AttendanceRecord.objects.create(
-    #             attendance=attendance,
-    #             worker_name=w["worker_name"].strip().title(),
-    #             status=w["status"],
-    #             national_id_image=w.get("national_id_image")
-    #         )
+    status = serializers.ChoiceField(
+        choices=AttendanceRecord.STATUS_CHOICES
+    )
 
+    absence_reason = serializers.ChoiceField(
+        choices=AttendanceRecord.ABSENCE_REASON_CHOICES,
+        required=False,
+        allow_null=True
+    )
+
+    image_key = serializers.CharField(
+        required=False,
+        allow_blank=True
+    )
+
+    def validate(self, data):
+
+        status = data["status"]
+        absence_reason = data.get("absence_reason")
+        image_key = data.get("image_key")
+
+        if status == "present":
+
+            if not image_key:
+                raise serializers.ValidationError({
+                    "image_key": "صورة العامل مطلوبة للعامل الحاضر."
+                })
+
+            if absence_reason:
+                raise serializers.ValidationError({
+                    "absence_reason": "لا يمكن تحديد سبب غياب للعامل الحاضر."
+                })
+
+        elif status == "absent":
+
+            if not absence_reason:
+                raise serializers.ValidationError({
+                    "absence_reason": "يجب اختيار سبب الغياب."
+                })
+
+            if image_key:
+                raise serializers.ValidationError({
+                    "image_key": "لا يجب إرسال صورة للعامل الغائب."
+                })
+
+        return data
+#################################################################
 
 class SiteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -225,9 +243,7 @@ class WorkerPhotoReportCreateSerializer(serializers.ModelSerializer):
 ######################## GPS TRACKING #########################
 ################################################################
 
-from .models import UserLocation
-
 class UserLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserLocation
-        fields = ["id", "latitude", "longitude", "site"]
+        fields = ["id", "latitude", "longitude"]

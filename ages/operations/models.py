@@ -56,9 +56,13 @@ class Attendance(models.Model):
 class AttendanceRecord(models.Model):
 
     STATUS_CHOICES = [
-        ("present", "Present"),
-        ("absent", "Absent"),
-        ("leave", "Leave"),
+        ("present", "حاضر"),
+        ("absent", "غائب"),
+        
+    ]
+    ABSENCE_REASON_CHOICES = [
+        ("with_permission", "غائب باذن"),
+        ("without_permission", "غائب بدون اذن"),
     ]
 
     attendance = models.ForeignKey(
@@ -71,15 +75,26 @@ class AttendanceRecord(models.Model):
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
 
-    national_id_image = models.ImageField(
-        upload_to="attendance/id_cards/%Y/%m/%d/"
+    absence_reason = models.CharField(
+        max_length=20,
+        choices=ABSENCE_REASON_CHOICES,
+        blank=True,
+        null=True
+    )
+
+    worker_image = models.ImageField(
+        upload_to="attendance/worker_images/%Y/%m/%d/",
+        blank=True,
+        null=True
     )
 
     class Meta:
         unique_together = ("attendance", "worker_name")
 
+
     def __str__(self):
         return f"{self.worker_name} - {self.status}"
+
     
 ########## workers photos #############
 
@@ -146,15 +161,6 @@ class WorkerPhoto(models.Model):
 
 class UserLocation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="locations")
-
-    site = models.ForeignKey(
-        Site,
-        on_delete=models.CASCADE,
-        related_name="locations",
-        null=True,
-        blank=True
-    )
-
     latitude = models.FloatField()
     longitude = models.FloatField()
 

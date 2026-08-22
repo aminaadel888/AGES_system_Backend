@@ -5,11 +5,11 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from users.permissions import IsAdmin
-from rest_framework import generics
+from rest_framework import generics,status
 from django_filters.rest_framework import DjangoFilterBackend
 
 from sites.models import Site
-from operations.models import Attendance , AttendanceRecord,WorkerPhotoReport
+from operations.models import Attendance , AttendanceRecord,WorkerPhotoReport,UserLastLocation
 from reports.models import IncidentReport, WeeklyCleaningReport
 
 from .serializers import *
@@ -88,13 +88,12 @@ class AdminDashboardOverviewView(APIView):
 
 
 ############## Attendance ############
-
 class AdminDashboardAttendanceView(APIView):
+
     permission_classes = [IsAdmin]
 
     def get(self, request):
 
-        # Admin only
         if request.user.role != "admin":
             return Response(
                 {
@@ -105,10 +104,23 @@ class AdminDashboardAttendanceView(APIView):
 
         today = timezone.localdate()
 
-        attendance_data = (
+        site_id = request.query_params.get("site_id")
+
+        attendance_queryset = (
             Attendance.objects
             .filter(date=today)
             .select_related("site", "shift")
+            .prefetch_related("records")
+        )
+
+        # Filter by site
+        if site_id:
+            attendance_queryset = attendance_queryset.filter(
+                site_id=site_id
+            )
+
+        attendance_data = (
+            attendance_queryset
             .annotate(
                 present=Count(
                     "records",
@@ -118,18 +130,18 @@ class AdminDashboardAttendanceView(APIView):
                     "records",
                     filter=Q(records__status="absent")
                 ),
-                leave=Count(
-                    "records",
-                    filter=Q(records__status="leave")
-                ),
                 total_workers=Count("records")
             )
-            .order_by("site__name", "shift__name")
+            .order_by(
+                "site__name",
+                "shift__name"
+            )
         )
 
         data = []
 
         for attendance in attendance_data:
+
             data.append({
                 "site_id": attendance.site_id,
                 "site_name": attendance.site.name,
@@ -141,8 +153,9 @@ class AdminDashboardAttendanceView(APIView):
 
                 "present": attendance.present,
                 "absent": attendance.absent,
-                "leave": attendance.leave,
                 "total_workers": attendance.total_workers,
+
+                "records": attendance.records.all(),
             })
 
         serializer = AttendanceDashboardSerializer(
@@ -151,7 +164,6 @@ class AdminDashboardAttendanceView(APIView):
         )
 
         return Response(serializer.data)
-
 
 #########  Incidents ##################
 class AdminDashboardIncidentsView(generics.ListAPIView):
@@ -289,3 +301,34 @@ class DashboardWorkerPhotoListView(generics.ListAPIView):
         "site",
         "supervisor",
     ]
+
+############# GPS Tracking ###############
+
+class AdminUserLocationsView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+
+        locations = (
+            UserLastLocation.objects
+            .filter(
+                user__role__in=["supervisor", "manager"]
+            )
+            .select_related("user")
+            .order_by("-updated_at")
+        )
+
+        user_id = request.query_params.get("user_id")
+
+        if user_id:
+            locations = locations.filter(user_id=user_id)
+
+        serializer = AdminUserLocationSerializer(
+            locations,
+            many=True
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )

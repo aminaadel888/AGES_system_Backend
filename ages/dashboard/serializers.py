@@ -3,7 +3,8 @@ from reports.models import (IncidentReport, IncidentImage ,
                             WeeklyCleaningReport,WeeklyCleaningReportFile)
 
 from notes.models import Note
-from operations.models import WorkerPhotoReport
+from operations.models import WorkerPhotoReport,UserLastLocation ,AttendanceRecord
+
 
 ######### Overview ############
 class AttendanceBreakdownSerializer(serializers.Serializer):
@@ -25,6 +26,19 @@ class DashboardOverviewSerializer(serializers.Serializer):
     attendance = AttendanceBreakdownSerializer()
 
 ############## Attendance ############
+
+class AttendanceRecordDashboardSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AttendanceRecord
+        fields = [
+            "id",
+            "worker_name",
+            "status",
+            "absence_reason",
+            "worker_image",
+        ]
+
 class AttendanceDashboardSerializer(serializers.Serializer):
     site_id = serializers.IntegerField()
     site_name = serializers.CharField()
@@ -34,8 +48,11 @@ class AttendanceDashboardSerializer(serializers.Serializer):
 
     present = serializers.IntegerField()
     absent = serializers.IntegerField()
-    leave = serializers.IntegerField()
     total_workers = serializers.IntegerField()
+
+    records = AttendanceRecordDashboardSerializer(
+        many=True
+    )
 
 
 #########  Incidents ##################
@@ -231,4 +248,23 @@ class DashboardWorkerPhotoSerializer(serializers.ModelSerializer):
             request.build_absolute_uri(photo.image.url)
             if request else photo.image.url
             for photo in obj.images.all()
+        ]
+
+############ GPS tracking #############
+class AdminUserLocationSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
+    phone = serializers.CharField(source="user.phone", read_only=True)
+    role = serializers.CharField(source="user.role", read_only=True)
+
+    class Meta:
+        model = UserLastLocation
+        fields = [
+            "user_id",
+            "username",
+            "phone",
+            "role",
+            "latitude",
+            "longitude",
+            "updated_at",
         ]

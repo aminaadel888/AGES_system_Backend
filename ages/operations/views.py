@@ -5,8 +5,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from sites.models import Site
-from .models import Shift, Attendance ,AttendanceRecord
-from .serializers import BulkAttendanceSerializer ,SiteSerializer, ShiftSerializer,WorkerPhoto,WorkerPhotoReportSerializer, SiteDropdownSerializer,ShiftDropdownSerializer ,AdminShiftSerializer,WorkerPhotoReportCreateSerializer
+from .models import Shift, Attendance ,AttendanceRecord,UserLastLocation
+from .serializers import (BulkAttendanceSerializer ,SiteSerializer, ShiftSerializer,WorkerPhoto,WorkerPhotoReportSerializer, 
+                          SiteDropdownSerializer,ShiftDropdownSerializer ,AdminShiftSerializer,
+                          WorkerPhotoReportCreateSerializer ,UserLocationSerializer, WorkerInputSerializer)
 from drf_spectacular.utils import extend_schema
 import json
 from django.db import transaction
@@ -14,6 +16,8 @@ from rest_framework import status
 from django.utils import timezone
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import ValidationError
+
+from .serializers import UserLocationSerializer
 
 ##################### Admin CRUD shift #############
 class AdminShiftViewSet(viewsets.ModelViewSet):
@@ -47,6 +51,7 @@ class ShiftBySiteAPIView(APIView):
         shifts = Shift.objects.filter(site_id=site_id)
         return Response(ShiftDropdownSerializer(shifts, many=True).data)
     
+####################################################
 
 class BulkAttendanceCreateView(APIView):
 
@@ -55,7 +60,6 @@ class BulkAttendanceCreateView(APIView):
     @extend_schema(
         request=BulkAttendanceSerializer,
     )
-
     @transaction.atomic
     def post(self, request):
 
@@ -68,7 +72,6 @@ class BulkAttendanceCreateView(APIView):
             raise_exception=True
         )
 
-
         # Read workers JSON
         try:
             workers = json.loads(
@@ -80,9 +83,17 @@ class BulkAttendanceCreateView(APIView):
                 "Invalid workers format."
             )
 
+        # Validate workers
+        workers_serializer = WorkerInputSerializer(
+            data=workers,
+            many=True
+        )
 
-        today = timezone.localdate()
+        workers_serializer.is_valid(
+            raise_exception=True
+        )
 
+        workers = workers_serializer.validated_data
 
         # At least one worker
         if not workers:
@@ -90,6 +101,7 @@ class BulkAttendanceCreateView(APIView):
                 "يلزم وجود عامل واحد على الأقل."
             )
 
+        today = timezone.localdate()
 
         # Prevent duplicate attendance
         if Attendance.objects.filter(
@@ -106,39 +118,18 @@ class BulkAttendanceCreateView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-
-        # Validate workers data and images
+        # Validate images
         for worker in workers:
 
-            worker_name = worker.get("worker_name")
-            worker_status = worker.get("status")
-            image_key = worker.get("image_key")
+            if worker["status"] == "present":
 
+                image_key = worker["image_key"]
 
-            if not worker_name:
-                raise ValidationError(
-                    "Worker name is required."
-                )
-
-
-            if not worker_status:
-                raise ValidationError(
-                    f"Status is missing for {worker_name}"
-                )
-
-
-            if not image_key:
-                raise ValidationError(
-                    f"Image key is missing for {worker_name}"
-                )
-
-
-            if image_key not in request.FILES:
-                raise ValidationError(
-                    f"Missing ID image for {worker_name}"
-                )
-
-
+                if image_key not in request.FILES:
+                    raise ValidationError({
+                        "worker_image":
+                            f"صورة العامل مطلوبة للعامل {worker['worker_name']}."
+                    })
 
         # Create Attendance
         attendance = Attendance.objects.create(
@@ -148,25 +139,23 @@ class BulkAttendanceCreateView(APIView):
             date=today
         )
 
-
-
         # Create Attendance Records
         for worker in workers:
 
-            AttendanceRecord.objects.create(
+            worker_image = None
 
-                attendance=attendance,
-
-                worker_name=worker["worker_name"].strip().title(),
-
-                status=worker["status"],
-
-                national_id_image=request.FILES.get(
+            if worker["status"] == "present":
+                worker_image = request.FILES.get(
                     worker["image_key"]
                 )
+
+            AttendanceRecord.objects.create(
+                attendance=attendance,
+                worker_name=worker["worker_name"].strip().title(),
+                status=worker["status"],
+                absence_reason=worker.get("absence_reason"),
+                worker_image=worker_image
             )
-
-
 
         return Response(
             {
@@ -301,9 +290,6 @@ class WorkerPhotoReportCreateView(generics.CreateAPIView):
 #################################################################
 ######################## GPS TRACKING #########################
 ################################################################
-
-from .models import UserLocation, UserLastLocation
-from .serializers import UserLocationSerializer
 
 class UserLocationCreateView(APIView):
     permission_classes = [IsAuthenticated]
