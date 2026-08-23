@@ -1,4 +1,5 @@
 from django.db import models
+from users.models import User
 
 # Create your models here.
 class Site(models.Model):
@@ -11,6 +12,23 @@ class Site(models.Model):
     workers_count = models.IntegerField(default=0)
 
     is_active = models.BooleanField(default=True)
+
+
+    site_manager = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="managed_sites"
+    )
+
+    area_manager = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="area_managed_sites"
+    )
 
     def __str__(self):
         return self.name

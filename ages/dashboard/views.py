@@ -36,7 +36,8 @@ class AdminDashboardOverviewView(APIView):
         active_sites = Site.objects.filter(is_active=True).count()
 
         total_supervisors = User.objects.filter(role="supervisor").count()
-        total_managers = User.objects.filter(role="manager").count()
+        total_site_managers = User.objects.filter(role="site_manager").count()
+        total_area_managers = User.objects.filter(role="area_manager").count()
         
 
         # Today's Attendance
@@ -56,10 +57,7 @@ class AdminDashboardOverviewView(APIView):
                 "id",
                 filter=Q(status="absent")
             ),
-            leave=Count(
-                "id",
-                filter=Q(status="leave")
-            ),
+            
         )
 
 
@@ -71,12 +69,12 @@ class AdminDashboardOverviewView(APIView):
             "total_sites": total_sites,
             "active_sites": active_sites,
             "total_supervisors": total_supervisors,
-            "total_managers": total_managers,
+            "total_siteManagers": total_site_managers,
+            "total_areaManagers": total_area_managers,
             "today_attendance_sheets": today_attendance_sheets,
             "attendance": {
                 "present": attendance_breakdown["present"],
                 "absent": attendance_breakdown["absent"],
-                "leave": attendance_breakdown["leave"],
             },
             "total_incidents": total_incidents,
             "total_weekly_reports": total_weekly_reports,
@@ -130,6 +128,10 @@ class AdminDashboardAttendanceView(APIView):
                     "records",
                     filter=Q(records__status="absent")
                 ),
+                leave=Count(
+                    "records",
+                    filter=Q(records__status="leave")
+                ),
                 total_workers=Count("records")
             )
             .order_by(
@@ -153,6 +155,7 @@ class AdminDashboardAttendanceView(APIView):
 
                 "present": attendance.present,
                 "absent": attendance.absent,
+                "leave": attendance.leave,
                 "total_workers": attendance.total_workers,
 
                 "records": attendance.records.all(),
@@ -285,12 +288,18 @@ class AdminDashboardNotesView(generics.ListAPIView):
 
 ################ worker photos ########################
 class DashboardWorkerPhotoListView(generics.ListAPIView):
+
     serializer_class = DashboardWorkerPhotoSerializer
+
     permission_classes = [IsAdmin]
 
     queryset = (
         WorkerPhotoReport.objects
-        .select_related("site", "supervisor")
+        .select_related(
+            "site",
+            "supervisor",
+            "shift",
+        )
         .prefetch_related("images")
         .order_by("-created_at")
     )
@@ -300,6 +309,7 @@ class DashboardWorkerPhotoListView(generics.ListAPIView):
     filterset_fields = [
         "site",
         "supervisor",
+        "shift",
     ]
 
 ############# GPS Tracking ###############
@@ -312,7 +322,7 @@ class AdminUserLocationsView(APIView):
         locations = (
             UserLastLocation.objects
             .filter(
-                user__role__in=["supervisor", "manager"]
+                user__role__in=["supervisor", "site_manager","area_manager"]
             )
             .select_related("user")
             .order_by("-updated_at")

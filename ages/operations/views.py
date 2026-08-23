@@ -16,21 +16,27 @@ from rest_framework import status
 from django.utils import timezone
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.exceptions import ValidationError
+from users.permissions import IsAdmin
 
 from .serializers import UserLocationSerializer
 
 ##################### Admin CRUD shift #############
 class AdminShiftViewSet(viewsets.ModelViewSet):
     serializer_class = AdminShiftSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdmin]
 
     def get_queryset(self):
+
         if self.request.user.role != "admin":
             return Shift.objects.none()
 
         return Shift.objects.select_related(
-            "site"
-        ).all().order_by("site__name", "start_time")
+            "site",
+            "supervisor"
+        ).all().order_by(
+            "site__name",
+            "start_time"
+        )
 ##############################################################
 
 class SiteListAPIView(APIView):

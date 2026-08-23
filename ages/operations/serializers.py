@@ -2,11 +2,16 @@ from rest_framework import serializers
 from .models import AttendanceRecord, Attendance ,Shift,WorkerPhotoReport,WorkerPhoto,UserLocation
 from sites.models import Site
 from django.utils import timezone
+
 ############## Admin CRUD shift ##############
 
 class AdminShiftSerializer(serializers.ModelSerializer):
     site_name = serializers.CharField(
         source="site.name",
+        read_only=True
+    )
+    supervisor_name = serializers.CharField(
+        source="supervisor.username",
         read_only=True
     )
 
@@ -16,6 +21,8 @@ class AdminShiftSerializer(serializers.ModelSerializer):
             "id",
             "site",
             "site_name",
+            "supervisor",
+            "supervisor_name",
             "name",
             "start_time",
             "end_time",
@@ -83,6 +90,7 @@ class WorkerInputSerializer(serializers.Serializer):
                 raise serializers.ValidationError({
                     "absence_reason": "لا يمكن تحديد سبب غياب للعامل الحاضر."
                 })
+            
 
         elif status == "absent":
 
@@ -90,12 +98,12 @@ class WorkerInputSerializer(serializers.Serializer):
                 raise serializers.ValidationError({
                     "absence_reason": "يجب اختيار سبب الغياب."
                 })
-
+            
             if image_key:
                 raise serializers.ValidationError({
                     "image_key": "لا يجب إرسال صورة للعامل الغائب."
                 })
-
+            
         return data
 #################################################################
 

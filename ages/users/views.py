@@ -8,27 +8,62 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 #jwt 
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
 #permissions
 from rest_framework.permissions import IsAuthenticated
-from .permissions import IsAdmin
+from .permissions import IsSiteManager, IsAreaManager ,IsAdmin
 
 from drf_spectacular.utils import extend_schema
 
 
 class SupervisorDropdownAPIView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        supervisors = User.objects.filter(
-            role__in=["supervisor", "manager"],
+
+        users = User.objects.filter(
+            role="supervisor",
             is_active=True
-        ).exclude(
-            id=request.user.id
         )
 
-        serializer = SupervisorDropdownSerializer(
-            supervisors,
+        serializer = UserDropdownSerializer(
+            users,
+            many=True
+        )
+
+        return Response(serializer.data)
+
+class SiteManagerDropdownAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        users = User.objects.filter(
+            role="site_manager",
+            is_active=True
+        )
+
+        serializer = UserDropdownSerializer(
+            users,
+            many=True
+        )
+
+        return Response(serializer.data)
+
+class AreaManagerDropdownAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        users = User.objects.filter(
+            role="area_manager",
+            is_active=True
+        )
+
+        serializer = UserDropdownSerializer(
+            users,
             many=True
         )
 
@@ -39,10 +74,6 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
 
-# @extend_schema(
-#     request=LoginSerializer,
-#     responses={200: LoginSerializer}
-# )
 class LoginView(APIView):
     
     @extend_schema(
@@ -94,18 +125,22 @@ class AdminOnlyView(APIView):
             "message": "Welcome Admin"
         })
     
-from .permissions import IsManager
 
-class ManagerView(APIView):
-    permission_classes = [IsManager]
-
+class SiteManagerView(APIView):
+    permission_classes = [IsSiteManager]
     def get(self, request):
         return Response({
-            "message": "Manager or Admin access"
+            "message": "Site Manager or Admin access"
+        })
+
+class AreaManagerView(APIView):
+    permission_classes = [IsAreaManager]
+    def get(self, request):
+        return Response({
+            "message": "Area Manager or Admin access"
         })
 
 
-    
 #############################################################################
 ##################### Admin  ##########################
 ########################################################################################

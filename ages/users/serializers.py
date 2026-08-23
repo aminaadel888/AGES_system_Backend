@@ -4,11 +4,14 @@ from .models import User
 from django.contrib.auth import authenticate
 
 
-class SupervisorDropdownSerializer(serializers.ModelSerializer):
+class UserDropdownSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = User
-        fields = ["id", "username"]
-
+        fields = [
+            "id",
+            "username",
+        ]
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,7 +27,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         #validate role
         role = validated_data.get("role", "supervisor")
 
-        if role not in ["manager", "supervisor"]:
+        if role not in ["area_manager","site_manager", "supervisor"]:
             role = "supervisor"
 
         validated_data["role"] = role

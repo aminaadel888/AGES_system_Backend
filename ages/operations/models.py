@@ -14,6 +14,15 @@ class Shift(models.Model):
 
     site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="shifts")
 
+    supervisor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="supervised_shifts"
+    )
+
+
     name = models.CharField(max_length=20, choices=SHIFT_TYPES)
 
     start_time = models.TimeField()
@@ -31,7 +40,12 @@ class Attendance(models.Model):
     site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="attendances")
     shift = models.ForeignKey("Shift", on_delete=models.CASCADE, related_name="attendances")
 
-    supervisor = models.ForeignKey(User, on_delete=models.CASCADE)
+    supervisor = models.ForeignKey(
+    User,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+)
 
     date = models.DateField(default=timezone.localdate)
 
@@ -58,12 +72,18 @@ class AttendanceRecord(models.Model):
     STATUS_CHOICES = [
         ("present", "حاضر"),
         ("absent", "غائب"),
-        
+
     ]
+        
+    
     ABSENCE_REASON_CHOICES = [
         ("with_permission", "غائب باذن"),
         ("without_permission", "غائب بدون اذن"),
+        ("sick", "إجازة مرضية"),
+        ("annual", "إجازة سنوية"),
+        ("other", "إجازة أخرى"),
     ]
+
 
     attendance = models.ForeignKey(
         Attendance,
@@ -102,8 +122,9 @@ class WorkerPhotoReport(models.Model):
 
     supervisor = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
-        related_name="worker_photo_reports"
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
 
     site = models.ForeignKey(

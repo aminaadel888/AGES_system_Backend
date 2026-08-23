@@ -10,14 +10,13 @@ from operations.models import WorkerPhotoReport,UserLastLocation ,AttendanceReco
 class AttendanceBreakdownSerializer(serializers.Serializer):
     present = serializers.IntegerField()
     absent = serializers.IntegerField()
-    leave = serializers.IntegerField()
-
 
 class DashboardOverviewSerializer(serializers.Serializer):
     total_sites = serializers.IntegerField()
     active_sites = serializers.IntegerField()
     total_supervisors = serializers.IntegerField()
-    total_managers=serializers.IntegerField()
+    total_site_managers = serializers.IntegerField()
+    total_area_managers = serializers.IntegerField()
 
     today_attendance_sheets = serializers.IntegerField()
     total_incidents = serializers.IntegerField()
@@ -220,36 +219,71 @@ class DashboardNoteSerializer(serializers.ModelSerializer):
 
 
 ########## worker photos ############
+
 class DashboardWorkerPhotoSerializer(serializers.ModelSerializer):
-    site_name = serializers.CharField(source="site.name", read_only=True)
+
+    site_id = serializers.IntegerField(
+        source="site.id",
+        read_only=True
+    )
+
+    site_name = serializers.CharField(
+        source="site.name",
+        read_only=True
+    )
+
+    supervisor_id = serializers.IntegerField(
+        source="supervisor.id",
+        read_only=True
+    )
+
     supervisor_name = serializers.CharField(
         source="supervisor.username",
         read_only=True
     )
+
+    shift_id = serializers.IntegerField(
+        source="shift.id",
+        read_only=True
+    )
+
+    shift_name = serializers.CharField(
+        source="shift.name",
+        read_only=True
+    )
+
     images = serializers.SerializerMethodField()
 
     class Meta:
         model = WorkerPhotoReport
+
         fields = [
             "id",
+
+            "site_id",
             "site_name",
+
+            "supervisor_id",
             "supervisor_name",
-            "latitude",
-            "longitude",
-            "notes",
+
+            "shift_id",
+            "shift_name",
+
             "created_at",
             "images",
         ]
 
     def get_images(self, obj):
+
         request = self.context.get("request")
 
         return [
             request.build_absolute_uri(photo.image.url)
-            if request else photo.image.url
+            if request
+            else photo.image.url
             for photo in obj.images.all()
         ]
-
+    
 ############ GPS tracking #############
 class AdminUserLocationSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source="user.id", read_only=True)

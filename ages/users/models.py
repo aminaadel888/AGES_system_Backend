@@ -31,9 +31,11 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = (
         ("admin", "Admin"),
-        ("manager", "Manager"),
+        ("area_manager", "Area Manager"),
+        ("site_manager", "Site Manager"),
         ("supervisor", "Supervisor"),
     )
+    
     username = models.CharField(max_length=150) #can be used for display purposes
     phone = models.CharField(max_length=15, unique=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="supervisor")

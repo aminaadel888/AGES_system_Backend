@@ -14,6 +14,8 @@ class AdminSiteSerializer(serializers.ModelSerializer):
             "latitude",
             "longitude",
             "workers_count",
+            "site_manager",
+            "area_manager",
             "is_active",
         ]
         read_only_fields = ["id"]
