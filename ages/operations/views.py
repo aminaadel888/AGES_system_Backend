@@ -26,17 +26,20 @@ class AdminShiftViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdmin]
 
     def get_queryset(self):
-
-        if self.request.user.role != "admin":
-            return Shift.objects.none()
-
-        return Shift.objects.select_related(
+        queryset = Shift.objects.select_related(
             "site",
             "supervisor"
         ).all().order_by(
             "site__name",
             "start_time"
         )
+
+        site_id = self.request.query_params.get("site")
+
+        if site_id:
+            queryset = queryset.filter(site_id=site_id)
+
+        return queryset
 ##############################################################
 
 class SiteListAPIView(APIView):

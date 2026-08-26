@@ -10,6 +10,8 @@ class Site(models.Model):
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     workers_count = models.IntegerField(default=0)
+    break_workers_count = models.IntegerField(default=0)
+    reserve_workers_count = models.IntegerField(default=0)
 
     is_active = models.BooleanField(default=True)
 
