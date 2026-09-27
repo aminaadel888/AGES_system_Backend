@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/notes/',include('notes.urls')),
     path('api/inventory/',include('inventory.urls')),
     path('api/dashboard/',include('dashboard.urls')),
+    path('api/notifications/',include('notifications.urls')),
 
 
     ###### swagger ###########

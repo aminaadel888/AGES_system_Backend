@@ -17,6 +17,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
 from rest_framework.views import APIView
 
+from notifications.services import create_admin_notification
+
+
 ###########################################################################
 ########################## weekly reports ########################################
 ############################################################################
@@ -115,6 +118,21 @@ class IncidentReportCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     parser_classes = [MultiPartParser, FormParser]
+
+    def perform_create(self, serializer):
+
+        incident = serializer.save()
+
+        create_admin_notification(
+            notification_type="incident",
+            title="New Incident Report",
+            message=(
+                f"{self.request.user.username} "
+                f"submitted a new incident report "
+                f"at {incident.site.name}"
+            ),
+            incident=incident,
+        )
 
 ##############################################
 

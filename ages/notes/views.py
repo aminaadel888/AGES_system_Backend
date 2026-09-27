@@ -5,6 +5,7 @@ from drf_spectacular.utils import extend_schema
 
 from .models import Note
 from .serializers import NoteSerializer
+from notifications.services import create_admin_notification
 
 
 class NoteCreateView(generics.CreateAPIView):
@@ -24,8 +25,19 @@ class NoteCreateView(generics.CreateAPIView):
 
 
     def perform_create(self, serializer):
-        serializer.save(
+
+        note = serializer.save(
             created_by=self.request.user
+        )
+
+        create_admin_notification(
+            notification_type="note",
+            title="New Note",
+            message=(
+                f"{self.request.user.username} "
+                f"created a new note at {note.site.name}"
+            ),
+            note=note,
         )
 
 class NoteListView(generics.ListAPIView):

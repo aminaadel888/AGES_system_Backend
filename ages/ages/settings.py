@@ -41,6 +41,7 @@ CSRF_TRUSTED_ORIGINS = [
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -54,6 +55,9 @@ INSTALLED_APPS = [
     'drf_spectacular',
     #ngrok 
     "corsheaders",
+    #notifications
+    # "daphne",
+    "channels",
 
     'users.apps.UsersConfig',
     'sites.apps.SitesConfig',
@@ -62,6 +66,7 @@ INSTALLED_APPS = [
     'notes.apps.NotesConfig',
     'inventory.apps.InventoryConfig',
     'dashboard.apps.DashboardConfig',
+    'notifications.apps.NotificationsConfig',
 
 ]
 
@@ -117,8 +122,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'ages.wsgi.application'
-
+#WSGI_APPLICATION = 'ages.wsgi.application'
+ASGI_APPLICATION = "ages.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
@@ -188,3 +193,21 @@ SPECTACULAR_SETTINGS = {
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+##### notifications ############
+
+if os.environ.get("REDIS_URL"):
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [os.environ["REDIS_URL"]],
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
